@@ -73,8 +73,8 @@
 
 					<div class="form-group col-md-12">
 						<label>UTC Timestamp:</label>
-						<input class="form-control" id='start' name='start' type='number'
-							{% if start is defined and start != None %}value="{{ start }}"{% endif %} readonly>
+						<input class="form-control" id='start' name='start' type='number' {% if start is defined and
+							start !=None %}value="{{ start }}" {% endif %} readonly>
 					</div>
 				</div>
 			</div>
@@ -122,11 +122,14 @@
 					<div class="form-group col-md-12">
 						<div class="form-check pl-0">
 							<label>
-								<input id="view_after_ctf" name="view_after_ctf" type="checkbox" {% if view_after_ctf %}checked{% endif %}>
+								<input id="view_after_ctf" name="view_after_ctf" type="checkbox" {% if view_after_ctf
+									%}checked{% endif %}>
 								View After CTF
 								<small class="form-text text-muted">
-									Allows challenges to be viewed after the End Time, however no new submissions will be recorded.<br>
-									For participants to be able to submit after End Time but not alter the scoreboard, configure Freeze Time to be your End Time.
+									Allows challenges to be viewed after the End Time, however no new submissions will
+									be recorded.<br>
+									For participants to be able to submit after End Time but not alter the scoreboard,
+									configure Freeze Time to be your End Time.
 								</small>
 							</label>
 						</div>
@@ -144,8 +147,8 @@
 
 					<div class="form-group col-md-12">
 						<label for="end">UTC Timestamp:</label>
-						<input class="form-control" id='end' name='end' type='number'
-							{% if end is defined and end != None %}value="{{ end }}"{% endif %} readonly>
+						<input class="form-control" id='end' name='end' type='number' {% if end is defined and end
+							!=None %}value="{{ end }}" {% endif %} readonly>
 					</div>
 				</div>
 			</div>
@@ -203,11 +206,28 @@
 
 					<div class="form-group col-md-12">
 						<label for="freeze">UTC Timestamp:</label>
-						<input class="form-control" id='freeze' name='freeze' type='number'
-							{% if freeze is defined and freeze != None %}value="{{ freeze }}"{% endif %} readonly>
+						<input class="form-control" id='freeze' name='freeze' type='number' {% if freeze is defined and
+							freeze !=None %}value="{{ freeze }}" {% endif %} readonly>
 					</div>
 				</div>
 			</div>
+		</div>
+		<hr>
+		<h4>Outro Settings</h4>
+		<div class="form-group">
+			<label>
+				Outro State
+				<small class="form-text text-muted">
+					Enable or disable the custom Outro page. When enabled, the homepage will be hijacked by the outro
+					page the moment the CTF ends.
+				</small>
+			</label>
+
+			{% set current_outro_state = get_config('outro_enabled') or 'disabled' %}
+			<select class="form-control custom-select" name="outro_enabled">
+				<option value="disabled" {% if current_outro_state=='disabled' %}selected{% endif %}>Disabled</option>
+				<option value="enabled" {% if current_outro_state=='enabled' %}selected{% endif %}>Enabled</option>
+			</select>
 		</div>
 
 		<button type="submit" class="btn btn-md btn-primary float-right">Update</button>

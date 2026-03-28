@@ -4,6 +4,7 @@ from flask import Blueprint, abort
 from flask import current_app as app
 from flask import (
     make_response,
+    send_from_directory,
     redirect,
     render_template,
     request,
@@ -354,6 +355,15 @@ def static_html(route):
     :param route:
     :return:
     """
+    # --- NEW OUTRO INTERCEPT LOGIC ---
+    if route == "index" and not request.args.get('no_outro'):
+        outro_state = _check_outro_timer()
+        if outro_state['enabled'] and outro_state['replace_index']:
+            outro_file = get_config('outro_file') or 'outro.html'
+            outro_dir = os.path.abspath(os.path.join(app.root_path, '../outro'))
+            return send_from_directory(outro_dir, outro_file)
+    # --- END NEW OUTRO LOGIC ---
+
     page = get_page(route)
     if page is None:
         abort(404)
@@ -479,6 +489,34 @@ def files(path):
     except IOError:
         abort(404)
 
+def _check_outro_timer():
+    """
+    Evaluate if the standard CTFd end time has passed.
+    If it has, trigger the outro logic.
+    """
+    from CTFd.utils.dates import ctf_ended
+    
+    # We only need 3 simple custom configs now
+    outro_enabled = str(get_config('outro_enabled') or 'disabled')
+    outro_access = str(get_config('outro_access') or 'authenticated')
+    outro_replace_index = str(get_config('outro_replace_index') or '0')
+    
+    # Check CTFd's built-in end timer
+    timer_triggered = ctf_ended()
+
+    if outro_enabled == 'enabled' and timer_triggered:
+        # Auto-enable replace index when the CTF ends
+        if outro_replace_index != '1':
+            set_config('outro_replace_index', '1')
+            outro_replace_index = '1'
+
+    return {
+        'enabled': outro_enabled == 'enabled',
+        'access': outro_access,
+        'timer_triggered': timer_triggered,
+        'replace_index': outro_replace_index == '1',
+        'redirect_to_outro': outro_enabled == 'enabled' and (timer_triggered or outro_replace_index == '1'),
+    }
 
 @views.route("/themes/<theme>/static/<path:path>")
 def themes(theme, path):
@@ -557,3 +595,188 @@ def robots():
     r = make_response(text, 200)
     r.mimetype = "text/plain"
     return r
+
+def _check_outro_timer():
+    """
+    Evaluate if the standard CTFd end time has passed.
+    If it has, trigger the outro logic.
+    """
+    from CTFd.utils.dates import ctf_ended
+    
+    outro_enabled = str(get_config('outro_enabled') or 'disabled')
+    outro_access = str(get_config('outro_access') or 'authenticated')
+    outro_replace_index = str(get_config('outro_replace_index') or '0')
+    
+    # Check CTFd's built-in end timer
+    timer_triggered = ctf_ended()
+
+    if outro_enabled == 'enabled' and timer_triggered:
+        # Auto-enable replace index when the CTF ends
+        if outro_replace_index != '1':
+            set_config('outro_replace_index', '1')
+            outro_replace_index = '1'
+
+    return {
+        'enabled': outro_enabled == 'enabled',
+        'access': outro_access,
+        'timer_triggered': timer_triggered,
+        'replace_index': outro_replace_index == '1',
+        'redirect_to_outro': outro_enabled == 'enabled' and (timer_triggered or outro_replace_index == '1'),
+    }
+
+@views.before_app_request
+def global_outro_redirect():
+    """
+    Runs before every single request. If the outro is active, force 
+    everyone on the frontend to the homepage (which serves the outro).
+    """
+    # 1. Protect critical paths so we don't break the admin panel, APIs, or assets
+    exempt_prefixes = (
+        "/themes",       # CTFd base styling
+        "/login",
+        "/api",          # Backend data (including your outro_data)
+        "/admin",        # Admin panel
+        "/setup",        # Setup pages
+        "/outro_assets", # Your custom outro files
+        "/files",        # File downloads
+        "/auth"          # Login/Logout routes so admins don't get locked out
+    )
+    
+    if request.path.startswith(exempt_prefixes):
+        return
+
+    # 2. Check the current outro status
+    outro_state = _check_outro_timer()
+    
+    # 3. If triggered, and they aren't ALREADY on the homepage, redirect them!
+    if outro_state['redirect_to_outro'] and request.path != "/":
+        return redirect(url_for("views.static_html", route="index"))
+
+@views.route("/outro_assets/<path:path>")
+def outro_assets(path):
+    return send_from_directory(os.path.abspath(os.path.join(app.root_path, '../outro')), path)
+
+@views.route("/api/outro_status")
+def outro_status():
+    from flask import jsonify
+    status = _check_outro_timer()
+    return jsonify(status)
+
+@views.route("/api/outro_data")
+def outro_data():
+    """
+    Dedicated endpoint that returns challenges, solves, and scoreboard data
+    for the outro page. Bypass standard restrictions to show data after CTF ends.
+    """
+    from flask import jsonify
+    from CTFd.models import Challenges as ChallengesModel
+    from CTFd.utils.challenges import get_solves_for_challenge_id
+    from CTFd.utils.modes import generate_account_url, get_mode_as_word, TEAMS_MODE
+    from CTFd.utils.scores import get_standings, get_user_standings
+    from collections import defaultdict
+    from sqlalchemy import select
+
+    # Only serve data when outro is enabled
+    outro_enabled = str(get_config('outro_enabled') or 'disabled')
+    if outro_enabled != 'enabled':
+        abort(403)
+
+    # Respect outro access control
+    outro_access = str(get_config('outro_access') or 'authenticated')
+    if outro_access == 'authenticated' and not authed():
+        abort(403)
+    elif outro_access == 'admins' and not is_admin():
+        abort(403)
+
+    # --- Challenges ---
+    challs = ChallengesModel.query.filter(
+        ChallengesModel.state != 'hidden',
+        ChallengesModel.state != 'locked',
+    ).order_by(ChallengesModel.value, ChallengesModel.id).all()
+
+    challenges_list = []
+    for c in challs:
+        challenges_list.append({
+            'id': c.id,
+            'name': c.name,
+            'value': c.value,
+            'category': c.category,
+            'type': c.type,
+        })
+
+    # --- Solves per challenge ---
+    solves_map = {}
+    for c in challs:
+        solves_map[c.id] = get_solves_for_challenge_id(c.id)
+
+    # --- Scoreboard ---
+    standings = get_standings()
+    mode = get_config("user_mode")
+    account_type = get_mode_as_word()
+
+    scoreboard = []
+    if mode == TEAMS_MODE:
+        r = db.session.execute(
+            select(
+                [
+                    Users.id,
+                    Users.name,
+                    Users.oauth_id,
+                    Users.team_id,
+                    Users.hidden,
+                    Users.banned,
+                ]
+            ).where(Users.team_id.isnot(None))
+        )
+        users_list = r.fetchall()
+        membership = defaultdict(dict)
+        for u in users_list:
+            if u.hidden is False and u.banned is False:
+                membership[u.team_id][u.id] = {
+                    "id": u.id,
+                    "oauth_id": u.oauth_id,
+                    "name": u.name,
+                    "score": 0,
+                }
+        user_standings = get_user_standings()
+        for u in user_standings:
+            if u.team_id in membership and u.user_id in membership[u.team_id]:
+                membership[u.team_id][u.user_id]["score"] = int(u.score)
+
+    for i, x in enumerate(standings):
+        entry = {
+            "pos": i + 1,
+            "account_id": x.account_id,
+            "account_url": generate_account_url(account_id=x.account_id),
+            "account_type": account_type,
+            "oauth_id": x.oauth_id,
+            "name": x.name,
+            "score": int(x.score),
+        }
+        if mode == TEAMS_MODE:
+            entry["members"] = list(membership.get(x.account_id, {}).values())
+        scoreboard.append(entry)
+
+    return jsonify({
+        'success': True,
+        'challenges': challenges_list,
+        'solves': solves_map,
+        'scoreboard': scoreboard,
+    })
+
+@views.route("/outro")
+def outro_page():
+    outro_enabled = str(get_config('outro_enabled') or 'disabled')
+    if outro_enabled != 'enabled':
+        abort(404)
+
+    outro_access = str(get_config('outro_access') or 'authenticated')
+    if outro_access == 'authenticated' and not authed():
+        return redirect(url_for("auth.login", next=request.full_path))
+    elif outro_access == 'admins':
+        if not is_admin():
+            abort(403)
+
+    outro_file = get_config('outro_file') or 'outro.html'
+    outro_dir = os.path.abspath(os.path.join(app.root_path, '../outro'))
+    return send_from_directory(outro_dir, outro_file)
