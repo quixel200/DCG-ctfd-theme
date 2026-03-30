@@ -34,18 +34,18 @@
       'csrfNonce': "{{ Session.nonce }}",
       'userMode': "{{ Configs.user_mode }}",
       'userId': {{ Session.id }},
-      'userName': {{ User.name | tojson }},
-      'userEmail': {{ User.email | tojson }},
-      'userVerified': {{ User.verified | tojson }},
-      'teamId': {{ Team.id | tojson }},
-      'teamName': {{ Team.name | tojson }},
-      'start': {{ Configs.start | tojson }},
-      'end': {{ Configs.end | tojson }},
-      'themeSettings': {{ Configs.theme_settings | tojson }},
-      'eventSounds': [
-        "/themes/core/static/sounds/notification.webm",
-        "/themes/core/static/sounds/notification.mp3",
-      ],
+    'userName': {{ User.name | tojson }},
+    'userEmail': {{ User.email | tojson }},
+    'userVerified': {{ User.verified | tojson }},
+    'teamId': {{ Team.id | tojson }},
+    'teamName': {{ Team.name | tojson }},
+    'start': {{ Configs.start | tojson }},
+    'end': {{ Configs.end | tojson }},
+    'themeSettings': {{ Configs.theme_settings | tojson }},
+    'eventSounds': [
+      "/themes/core/static/sounds/notification.webm",
+      "/themes/core/static/sounds/notification.mp3",
+    ],
     }
   </script>
 
@@ -61,8 +61,8 @@
     {% block content %}
     {% endblock %}
   </main>
-  
-  </div> 
+
+  </div>
 
   {% include "components/snackbar.html" %}
 
@@ -83,7 +83,7 @@
 
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
-  
+
   {% block scripts %}
   {{ Assets.js("assets/js/page.js") }}
   {% endblock %}

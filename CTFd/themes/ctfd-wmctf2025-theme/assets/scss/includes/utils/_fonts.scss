@@ -15,9 +15,11 @@ $fa-font-path: "../webfonts";
 html,
 body,
 .container {
-  font-family: "Lato", sans-serif;
+  font-family: "Press Start 2P", system-ui;
+  font-weight: 400;
+  font-style: normal;
 }
 
 .jumbotron .container {
-  font-family: "Raleway", sans-serif;
+  font-family: "Press Start 2P", system-ui;
 }

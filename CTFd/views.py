@@ -1,4 +1,5 @@
-import os  # noqa: I001
+import json  # noqa: I001
+import os
 
 from flask import Blueprint, abort
 from flask import current_app as app
@@ -489,24 +490,123 @@ def files(path):
     except IOError:
         abort(404)
 
+
+def generate_outro_json():
+    """
+    Generate outro JSON data from CTFd's database using teams as the
+    scoring entity. Output matches the outro/data.json schema with
+    keys: solves, challenges, players (teams).
+
+    Also writes the result to outro/data.json so outro.html can
+    load it via the /outro_assets/ static route.
+    """
+    from CTFd.models import Challenges as ChallengesModel, Solves as SolvesModel
+
+    # --- Solves (deduplicated per team + challenge, earliest wins) ---
+    all_solves = (
+        SolvesModel.query
+        .join(ChallengesModel, SolvesModel.challenge_id == ChallengesModel.id)
+        .filter(
+            ChallengesModel.state != 'hidden',
+            ChallengesModel.state != 'locked',
+            SolvesModel.team_id.isnot(None),
+        )
+        .order_by(SolvesModel.date.asc())
+        .all()
+    )
+
+    seen = set()
+    solves_list = []
+    for s in all_solves:
+        key = (s.team_id, s.challenge_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        solves_list.append({
+            'id': str(s.id),
+            'playerId': str(s.team_id),
+            'solvedAt': s.date.strftime('%Y-%m-%dT%H:%M:%S.%fZ') if s.date else '',
+            'challengeName': s.challenge.name if s.challenge else '',
+        })
+
+    # --- Challenges ---
+    challs = (
+        ChallengesModel.query
+        .filter(
+            ChallengesModel.state != 'hidden',
+            ChallengesModel.state != 'locked',
+        )
+        .order_by(ChallengesModel.value, ChallengesModel.id)
+        .all()
+    )
+
+    challenges_list = []
+    for c in challs:
+        tag_values = [t.value for t in c.tags] if c.tags else []
+        challenges_list.append({
+            'name': c.name,
+            'displayName': c.name,
+            'author': c.attribution or '',
+            'description': c.description or '',
+            'categories': [c.category] if c.category else [],
+            'tags': tag_values,
+            'difficulty': c.difficulty or '',
+            'flagFormat': '',
+            'attachments': [],
+            'hasRemote': False,
+        })
+
+    # --- Players (Teams) ---
+    teams = (
+        Teams.query
+        .filter_by(hidden=False, banned=False)
+        .order_by(Teams.id)
+        .all()
+    )
+
+    players_list = []
+    for t in teams:
+        players_list.append({
+            'id': str(t.id),
+            'name': t.name,
+            'attributes': {},
+        })
+
+    result = {
+        'solves': solves_list,
+        'challenges': challenges_list,
+        'players': players_list,
+    }
+
+    # Write to /tmp/ since the container filesystem may be read-only
+    data_path = '/tmp/outro_data.json'
+    with open(data_path, 'w') as f:
+        json.dump(result, f)
+
+    return result
+
+
 def _check_outro_timer():
     """
     Evaluate if the standard CTFd end time has passed.
-    If it has, trigger the outro logic.
+    If it has, trigger the outro logic and generate data.json.
     """
     from CTFd.utils.dates import ctf_ended
-    
-    # We only need 3 simple custom configs now
+
     outro_enabled = str(get_config('outro_enabled') or 'disabled')
     outro_access = str(get_config('outro_access') or 'authenticated')
     outro_replace_index = str(get_config('outro_replace_index') or '0')
-    
-    # Check CTFd's built-in end timer
+
     timer_triggered = ctf_ended()
 
     if outro_enabled == 'enabled' and timer_triggered:
-        # Auto-enable replace index when the CTF ends
         if outro_replace_index != '1':
+            # CTF just ended — generate the outro data once
+            try:
+                generate_outro_json()
+            except Exception as e:
+                import logging
+                logging.getLogger('CTFd').error(f'Failed to generate outro data: {e}')
             set_config('outro_replace_index', '1')
             outro_replace_index = '1'
 
@@ -596,33 +696,6 @@ def robots():
     r.mimetype = "text/plain"
     return r
 
-def _check_outro_timer():
-    """
-    Evaluate if the standard CTFd end time has passed.
-    If it has, trigger the outro logic.
-    """
-    from CTFd.utils.dates import ctf_ended
-    
-    outro_enabled = str(get_config('outro_enabled') or 'disabled')
-    outro_access = str(get_config('outro_access') or 'authenticated')
-    outro_replace_index = str(get_config('outro_replace_index') or '0')
-    
-    # Check CTFd's built-in end timer
-    timer_triggered = ctf_ended()
-
-    if outro_enabled == 'enabled' and timer_triggered:
-        # Auto-enable replace index when the CTF ends
-        if outro_replace_index != '1':
-            set_config('outro_replace_index', '1')
-            outro_replace_index = '1'
-
-    return {
-        'enabled': outro_enabled == 'enabled',
-        'access': outro_access,
-        'timer_triggered': timer_triggered,
-        'replace_index': outro_replace_index == '1',
-        'redirect_to_outro': outro_enabled == 'enabled' and (timer_triggered or outro_replace_index == '1'),
-    }
 
 @views.before_app_request
 def global_outro_redirect():
@@ -665,104 +738,43 @@ def outro_status():
 @views.route("/api/outro_data")
 def outro_data():
     """
-    Dedicated endpoint that returns challenges, solves, and scoreboard data
-    for the outro page. Bypass standard restrictions to show data after CTF ends.
+    Serves the pre-generated outro data.json content.
+    Falls back to generating it on the fly if not yet generated.
     """
     from flask import jsonify
-    from CTFd.models import Challenges as ChallengesModel
-    from CTFd.utils.challenges import get_solves_for_challenge_id
-    from CTFd.utils.modes import generate_account_url, get_mode_as_word, TEAMS_MODE
-    from CTFd.utils.scores import get_standings, get_user_standings
-    from collections import defaultdict
-    from sqlalchemy import select
 
-    # Only serve data when outro is enabled
     outro_enabled = str(get_config('outro_enabled') or 'disabled')
     if outro_enabled != 'enabled':
         abort(403)
 
-    # Respect outro access control
     outro_access = str(get_config('outro_access') or 'authenticated')
     if outro_access == 'authenticated' and not authed():
         abort(403)
     elif outro_access == 'admins' and not is_admin():
         abort(403)
 
-    # --- Challenges ---
-    challs = ChallengesModel.query.filter(
-        ChallengesModel.state != 'hidden',
-        ChallengesModel.state != 'locked',
-    ).order_by(ChallengesModel.value, ChallengesModel.id).all()
+    # Try to read cached data, otherwise generate fresh
+    data_path = '/tmp/outro_data.json'
+    if os.path.isfile(data_path):
+        with open(data_path, 'r') as f:
+            return jsonify(json.load(f))
 
-    challenges_list = []
-    for c in challs:
-        challenges_list.append({
-            'id': c.id,
-            'name': c.name,
-            'value': c.value,
-            'category': c.category,
-            'type': c.type,
-        })
+    return jsonify(generate_outro_json())
 
-    # --- Solves per challenge ---
-    solves_map = {}
-    for c in challs:
-        solves_map[c.id] = get_solves_for_challenge_id(c.id)
 
-    # --- Scoreboard ---
-    standings = get_standings()
-    mode = get_config("user_mode")
-    account_type = get_mode_as_word()
+@views.route("/api/generate_outro_data")
+def generate_outro_data_endpoint():
+    """
+    Admin-only endpoint to manually (re)generate the outro data.json
+    from the CTFd database with team-based scoring.
+    """
+    from flask import jsonify
 
-    scoreboard = []
-    if mode == TEAMS_MODE:
-        r = db.session.execute(
-            select(
-                [
-                    Users.id,
-                    Users.name,
-                    Users.oauth_id,
-                    Users.team_id,
-                    Users.hidden,
-                    Users.banned,
-                ]
-            ).where(Users.team_id.isnot(None))
-        )
-        users_list = r.fetchall()
-        membership = defaultdict(dict)
-        for u in users_list:
-            if u.hidden is False and u.banned is False:
-                membership[u.team_id][u.id] = {
-                    "id": u.id,
-                    "oauth_id": u.oauth_id,
-                    "name": u.name,
-                    "score": 0,
-                }
-        user_standings = get_user_standings()
-        for u in user_standings:
-            if u.team_id in membership and u.user_id in membership[u.team_id]:
-                membership[u.team_id][u.user_id]["score"] = int(u.score)
+    if not is_admin():
+        abort(403)
 
-    for i, x in enumerate(standings):
-        entry = {
-            "pos": i + 1,
-            "account_id": x.account_id,
-            "account_url": generate_account_url(account_id=x.account_id),
-            "account_type": account_type,
-            "oauth_id": x.oauth_id,
-            "name": x.name,
-            "score": int(x.score),
-        }
-        if mode == TEAMS_MODE:
-            entry["members"] = list(membership.get(x.account_id, {}).values())
-        scoreboard.append(entry)
-
-    return jsonify({
-        'success': True,
-        'challenges': challenges_list,
-        'solves': solves_map,
-        'scoreboard': scoreboard,
-    })
+    result = generate_outro_json()
+    return jsonify({'success': True, 'data': result})
 
 @views.route("/outro")
 def outro_page():
