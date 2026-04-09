@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&family=Doto:wght@100..900&family=Geo:ital@0;1&family=Patrick+Hand&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=UnifrakturCook:wght@700&display=block"
+        href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Doto:wght@100..900&family=Geo:ital@0;1&family=Patrick+Hand&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=UnifrakturCook:wght@700&display=block"
         rel="stylesheet">
 
     <style>
@@ -111,7 +111,7 @@
         }
 
         #x3text {
-            font: 400 200px "Cherry Bomb One", system-ui;
+            font: 400 200px "Lilita One", sans-serif;
             top: 0;
             left: 0;
             right: 0;
@@ -215,6 +215,7 @@
             }
         }
 
+        /* COMMENTED OUT - scrub bar disabled
         #scrub {
             z-index: 777;
             width: 100%;
@@ -241,13 +242,16 @@
                 height: 100%;
             }
         }
+        */
     </style>
 </head>
 
 <body>
+    <!-- COMMENTED OUT - scrub bar disabled
     <div id="scrub" style="display:none">
         <div></div>
     </div>
+    -->
     <!--if i set it to display:none it breaks firefox for some reason???? */-->
     <svg style="position:absolute;opacity:0;top:-99999;left:-99999;pointer-events:none;z-index:-9999" width=1920
         height=1080 viewBox="0 0 1920 1080">
@@ -285,7 +289,7 @@
         </defs>
     </svg>
     <div id="fontPreload">
-        <span style='font: 400 32px "Cherry Bomb One"'>DEFCON abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        <span style='font: 400 32px "Lilita One"'>DEFCON abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
             0123456789 ^-^</span>
         <span style='font: 400 32px "Doto"'>DEFCON abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789
             ^-^</span>
@@ -324,7 +328,7 @@
     <div id="loginThing">
 
         <div id="loggedOutThing">
-            <h2>DEFCON goodbye experience</h2>
+            <h2>DCG91422 goodbye experience</h2>
             <p>You are currently logged out.<br>Pick your name from the list to "log in".</p>
             <span style="font-size: 0.5em;margin:-28px 0 20px">(there is no authentication 💀)</span>
             <select id="usernamePicker">
@@ -355,6 +359,7 @@
     <canvas id="offCanvas" style="display: none" width="1920" height="1080"></canvas>
     <div id="nowplaying" style="opacity:0;display:none">now playing: <a target="_blank"></a></div>
     <script type="text/javascript">
+        /* COMMENTED OUT - scrub bar disabled
         // ARCHIVE - CONTROLS
         function updateScrub() {
             document.querySelector("#scrub>div").style.width = `${(Date.now() - TARGET_TIME) / (1000 * 60 * 20) * 100}%`;
@@ -383,6 +388,7 @@
                     break;
             }
         }
+        */
 
         /**********/
         /* CONFIG */
@@ -985,7 +991,7 @@
 
         function font(i, px = null) {
             const fonts = {
-                "cherry": '200px "Cherry Bomb One"',
+                "cherry": '200px "Lilita One"',
                 "comic": '200px "Comic Sans MS", "Patrick Hand", cursive',
                 "teamname": '256px "UnifrakturCook"',
                 "placement": '64px "Space Mono"',
@@ -1121,7 +1127,7 @@
         function animate_catch() {
             try {
                 replay_ws();
-                updateScrub();
+                // updateScrub(); // COMMENTED OUT - scrub bar disabled
                 animate();
             } catch (e) {
                 console.error(e)
@@ -1187,11 +1193,11 @@
                     ctx.translate(-SW / 2, -SH / 2);
                     ctx.lineWidth = 32;
                     ctx.strokeStyle = "#FFF";
-                    ctx.strokeText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.strokeText("DCG91422", SW / 2, SH / 2 - 8);
                     drawCursors(ctx, easeOutExpoF(s(currentBeat)) * 0.9);
                     drawMouse(ctx);
                     ctx.fillStyle = "#A71CFF";
-                    ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                     ctx.fillStyle = "#FFF";
                     font("cherry", 24)
                     ctx.fillText(`${Math.floor(60 * 15 - flair.currentTime)}s until winner announcements`, SW / 2, SH / 2 + 128);
@@ -1212,11 +1218,11 @@
                     ctx.translate(-SW / 2, -SH / 2);
                     ctx.lineWidth = 32;
                     ctx.strokeStyle = "#3D2F22";
-                    ctx.strokeText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.strokeText("DCG91422", SW / 2, SH / 2 - 8);
                     drawCursors(ctx, easeOutExpoF(s(currentBeat)) * 0.9);
                     drawMouse(ctx);
                     ctx.fillStyle = "#81FF38";
-                    ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                     ctx.fillStyle = "#3D2F22";
                     font("cherry", 24)
                     ctx.fillText(`${Math.floor(60 * 15 - flair.currentTime)}s until winner announcements`, SW / 2, SH / 2 + 128);
@@ -1237,11 +1243,11 @@
                     ctx.translate(-SW / 2, -SH / 2);
                     ctx.lineWidth = 32;
                     ctx.strokeStyle = "#348085";
-                    ctx.strokeText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.strokeText("DCG91422", SW / 2, SH / 2 - 8);
                     drawCursors(ctx, easeOutExpoF(s(currentBeat)) * 0.9);
                     drawMouse(ctx);
                     ctx.fillStyle = "#2DF1F4";
-                    ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                    ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
 
                     ctx.fillStyle = "#348085";
                     font("cherry", 24)
@@ -1370,11 +1376,11 @@
                 }
                 if (currentPartIdx == 5) {
                     ctx.save();
-                    bg("#444597");
+                    bg("#7FC757");
                     font("cherry", 256)
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.strokeStyle = "#85256D";
+                    ctx.strokeStyle = "#3D2F22";
 
                     if (currentBeat >= 0) {
                         const calm = (currentBeat >= 40 && currentBeat < 48) || currentBeat >= 68;
@@ -1389,24 +1395,24 @@
                         ctx.scale(scl, scl);
                         ctx.translate(-SW / 2, -SH / 2);
                         ctx.lineWidth = 32 + (b < 2 ? 8 * (1 - (b % 1)) : 0);
-                        ctx.strokeText("DEFCON", SW / 2, SH / 2 - 8);
+                        ctx.strokeText("DCG91422", SW / 2, SH / 2 - 8);
 
-                        ctx.fillStyle = "#85256D";
+                        ctx.fillStyle = "#3D2F22";
                         font("cherry", 24)
                         ctx.fillText(`${Math.floor(60 * 15 - flair.currentTime)}s until winner announcements`, SW / 2, SH / 2 + 128);
                         drawDiscordMessages();
                         font("cherry", 256)
 
 
-                        ctx.fillStyle = "#407";
-                        ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                        ctx.fillStyle = "#81FF38";
+                        ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                         drawCursors(ctx, easeOutExpoF(s(currentBeat)) * 0.9);
                         drawMouse(ctx);
                         //ctx.clip();
                         if (ultra)
                             ctx.filter = "blur(8px)";
-                        ctx.fillStyle = "#6B4CC3";
-                        ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                        ctx.fillStyle = "#81FF38";
+                        ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                         if (ultra)
                             ctx.filter = "none";
                         if (currentBeat >= 48 && !calm) {
@@ -1414,7 +1420,7 @@
                             ctx.fillStyle = "#FFF";
                             ctx.globalCompositeOperation = "screen";
                             ctx.globalAlpha = (b < 2 ? (1 - (b % 1)) : 0);
-                            ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                            ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                             ctx.restore();
                         }
                         if (currentBeat >= 47 && currentBeat < 48) {
@@ -1425,7 +1431,7 @@
                             const t3 = t * t2;
                             ctx.globalAlpha = t3;
                             ctx.fillStyle = "#FFF";
-                            ctx.fillText("DEFCON", SW / 2, SH / 2 - 8);
+                            ctx.fillText("DCG91422", SW / 2, SH / 2 - 8);
                             ctx.resetTransform();
                             //ctx.filter = `blur(${32*t3}px) brightness(${100+100*t3})`;
                             ctx.filter = `blur(${32 * t3}px) brightness(${100 + 100 * t3}%)`;
@@ -1459,7 +1465,7 @@
             //  bg("red");
             //}
             if (r(0, 16 - 2 / 16)) {
-                document.title = `DEFCON`;
+                document.title = `DCG91422`;
                 ctx.save();
                 bg("#101019");
                 font("chall");
@@ -1469,7 +1475,7 @@
                 drawCursors(ctx);
                 const texts = [
                     "alright, it is time",
-                    "DCG Coimbatore CTF 2026 is coming to a close",
+                    "Defcon Coimbatore CTF 2026 is coming to a close",
                     "so we're gonna announce the winners",
                     "enjoy the show!",
                 ];
@@ -1483,11 +1489,11 @@
             if (r(16 - 2 / 16, 2 / 16)) {
                 const t = (currentBeat - (16 - 2 / 16)) / (2 / 16);
                 ctx.save();
-                bg(t > 0.5 ? "#36008C" : '#F84FED');
+                bg("#36008C");
                 ctx.translate(SW / 2, SH / 2);
                 ctx.scale(0.9, 0.9);
                 ctx.roundRect(SX + 968 / 2 - SW / 2, SY + 64 - SH / 2, 1920 - 968, 1080 - 128, 64);
-                ctx.fillStyle = t > 0.5 ? "#FFF" : '#FF849C';
+                ctx.fillStyle = "#FFF";
                 ctx.fill();
                 ctx.restore();
             }
@@ -1543,15 +1549,12 @@
 
                 if (ultra)
                     pushFilter("blur(32px)");
-                if (currentBeat < 24.25)
-                    bg("#FFA1C3");
-                ctx.globalAlpha = easeInOutExpoF(s((currentBeat - 23.75) * 2));
                 bg("#474B79");
                 if (ultra)
                     popFilter();
                 ctx.globalAlpha = 1;
-                ctx.fillStyle = mvmvm ? "#36008C" : "#FFF";
-                font(mvmvm ? "comic" : "cherry", 64);
+                ctx.fillStyle = "#36008C";
+                font("comic", 64);
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 const difficulties = [
@@ -1578,8 +1581,8 @@
                 const cTXIAO = cT < 0.5 ? easeOutExpoF(cT * 2) : 2 - easeOutExpoF(2 - cT * 2);
                 for (const [i, chall] of currentChalls.entries()) {
                     const solvedByPlayer = isChallSolved(chall.name);
-                    ctx.fillStyle = mvmvm ? "#36008C" : "#FFF";
-                    font(mvmvm ? "comic" : "cherry", 64);
+                    ctx.fillStyle = "#36008C";
+                    font("comic", 64);
                     //const wOff = SW/3;
                     //const wOff = SW/2;
                     //ctx.textAlign = (i%2)?"left":"right";
@@ -1595,26 +1598,26 @@
                     ctx.save();
                     ctx.lineWidth = 8 + 8 * drumEaseB;
                     ctx.lineJoin = "round";
-                    ctx.strokeStyle = mvmvm ? '#F84FED' : '#FF849C';
+                    ctx.strokeStyle = '#F84FED';
                     if (solvedByPlayer)
-                        ctx.strokeStyle = mvmvm ? "#0F0" : "#5FAD56";
+                        ctx.strokeStyle = "#0F0";
                     ctx.strokeText(chall.name, xPos, yPos);
                     if (drumEaseB) {
                         ctx.lineWidth = drumEaseB * 2;
-                        ctx.strokeStyle = mvmvm ? "#36008C" : "#FFF";
+                        ctx.strokeStyle = "#36008C";
                         ctx.strokeText(chall.name, xPos, yPos);
                     }
                     ctx.restore();
                     //easeInExpo(Math.max(0,1-latestDrumB))
                     //easeInExpo(Math.max(0,1-latestDrumA))
                     ctx.fillText(chall.name, xPos, yPos);
-                    font(mvmvm ? "comic" : "cherry", 32);
+                    font("comic", 32);
                     ctx.fillText(`by ${chall.author}`, xPos, yPos + 64);
 
                     ctx.fillText(solvesData.filter(e => e.challengeName == chall.name).length + " solves", xPos, yPos + 64 + 40);
                     if (solvedByPlayer) {
-                        ctx.fillStyle = mvmvm ? "#0F0" : "#5FAD56";
-                        font(mvmvm ? "comic" : "cherry", 24);
+                        ctx.fillStyle = "#0F0";
+                        font("comic", 24);
                         ctx.fillText("(you solved this!)", xPos, yPos + 64 + 40 + 32);
                     }
                 }
@@ -1701,7 +1704,7 @@
                     ctx.fillStyle = "#FFF";
                 if (currentBeat >= 31 + 15 / 16)
                     ctx.fillStyle = "#000";
-                ctx.fillText("DEFCON", SW / 2, SH / 2 - 6.5);
+                ctx.fillText("DCG91422", SW / 2, SH / 2 - 6.5);
                 ctx.restore();
             }
 
@@ -2021,7 +2024,7 @@
                     ctx.fillText(`(you're logged out)`, SW / 2, SH / 2 + 300);
                 else
                     ctx.fillText(`You placed ${th(myTeamIdx + 1)}!`, SW / 2, SH / 2 + 300);
-                ctx.fillText("thank u for playing DEFCON :3", SW / 2, SH / 2 + 370);
+                ctx.fillText("thank u for playing DEFCON Coimbatore CTF :3", SW / 2, SH / 2 + 370);
                 font("cherry", 24);
                 ctx.fillText("Music: Vylet Pony - Flair for the Dramatic", SW / 2, SH / 2 + 430);
                 if (extra)
@@ -2157,10 +2160,12 @@
             await new Promise(resolve => requestAnimationFrame(resolve));
             outro(-1);
 
+            /* COMMENTED OUT - scrub bar disabled
             // ARCHIVE - SCRUBBING INDICATOR
             document.querySelector("#scrub").style.display = "";
             setTimeout(() => document.querySelector("#scrub").style.opacity = 1, 2000);
             setTimeout(() => document.querySelector("#scrub").style.opacity = "", 4500);
+            */
 
             setTimeout(() => document.getElementById("loginThing").style.opacity = 0, 2000);
             setTimeout(() => document.getElementById("loginThing").style.display = "none", 3000);
